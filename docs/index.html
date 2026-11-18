@@ -1,0 +1,841 @@
+<!doctype html>
+<html lang="zh-Hant">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <meta name="description" content="共作 FLOW：工作流與團隊筆記共存的大白板互動概念。">
+    <title>共作 FLOW · 工作流協作白板</title>
+    <style>
+        :root {
+            color-scheme: dark;
+            --bg: #0c1015;
+            --panel: #171c24;
+            --line: #303946;
+            --text: #ecf0f5;
+            --muted: #8d9aaa;
+            --cyan: #85d6e7;
+            --orange: #ed957c
+        }
+
+        * {
+            box-sizing: border-box
+        }
+
+        body {
+            margin: 0;
+            background: var(--bg);
+            color: var(--text);
+            font: 14px "Segoe UI", "Microsoft JhengHei", sans-serif;
+            overflow: hidden
+        }
+
+        button,
+        input,
+        textarea {
+            font: inherit
+        }
+
+        button {
+            cursor: pointer;
+            border: 1px solid var(--line);
+            background: #202731;
+            color: var(--text);
+            border-radius: 7px;
+            padding: 9px 13px
+        }
+
+        button:hover {
+            background: #2b3542
+        }
+
+        button:focus-visible,
+        input:focus-visible,
+        textarea:focus-visible {
+            outline: 2px solid var(--cyan);
+            outline-offset: 3px
+        }
+
+        button:disabled {
+            opacity: .5;
+            cursor: wait
+        }
+
+        .primary {
+            background: var(--orange);
+            border-color: var(--orange);
+            color: #1d2025;
+            font-weight: 700
+        }
+
+        .primary:hover {
+            background: #f5ae98
+        }
+
+        header {
+            height: 72px;
+            padding: 0 25px;
+            display: flex;
+            align-items: center;
+            gap: 20px;
+            background: #11161d;
+            border-bottom: 1px solid var(--line);
+            position: relative;
+            z-index: 5
+        }
+
+        .logo {
+            font-size: 22px;
+            font-weight: 750;
+            letter-spacing: 2px
+        }
+
+        .logo em {
+            color: var(--cyan);
+            font-style: normal
+        }
+
+        .divider {
+            height: 26px;
+            width: 1px;
+            background: var(--line)
+        }
+
+        .title b {
+            font-size: 14px
+        }
+
+        .title small {
+            display: block;
+            color: var(--muted);
+            font-size: 11px;
+            margin-top: 4px
+        }
+
+        .spacer {
+            flex: 1
+        }
+
+        .tag {
+            font-size: 11px;
+            color: var(--cyan);
+            padding: 5px 9px;
+            background: #182c35;
+            border-radius: 5px
+        }
+
+        .avatars {
+            display: flex;
+            padding-left: 6px
+        }
+
+        .avatars span {
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            display: grid;
+            place-items: center;
+            color: #242a30;
+            font-size: 11px;
+            border: 2px solid #151a21;
+            margin-left: -5px;
+            background: #c4b78d
+        }
+
+        .avatars span:nth-child(2) {
+            background: #a4bdbe
+        }
+
+        .avatars span:nth-child(3) {
+            background: #bcafe1
+        }
+
+        .people {
+            font-size: 11px;
+            color: var(--muted)
+        }
+
+        .sidebar {
+            position: absolute;
+            top: 72px;
+            bottom: 0;
+            left: 0;
+            width: 222px;
+            background: #10151b;
+            border-right: 1px solid #27303b;
+            padding: 26px 16px;
+            z-index: 4
+        }
+
+        .eyebrow {
+            font-size: 10px;
+            letter-spacing: 2px;
+            color: var(--muted);
+            margin-bottom: 15px
+        }
+
+        .nav {
+            display: block;
+            width: 100%;
+            text-align: left;
+            border: 0;
+            background: transparent;
+            padding: 13px 10px;
+            color: #a2adbb;
+            margin: 6px 0
+        }
+
+        .nav.active {
+            background: #1a2b34;
+            color: var(--cyan)
+        }
+
+        .nav .dot {
+            display: inline-block;
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background: currentColor;
+            margin: 0 10px 2px 1px
+        }
+
+        .sideinfo {
+            position: absolute;
+            bottom: 25px;
+            left: 20px;
+            right: 20px;
+            font-size: 12px;
+            color: var(--muted);
+            line-height: 1.8
+        }
+
+        .sideinfo strong {
+            color: #c5ced8;
+            font-weight: 500
+        }
+
+        .canvas {
+            position: absolute;
+            left: 222px;
+            right: 0;
+            top: 72px;
+            bottom: 0;
+            overflow: hidden;
+            background-color: #0d1218;
+            background-image: radial-gradient(#2a3340 .8px, transparent .8px);
+            background-size: 24px 24px;
+            touch-action: none
+        }
+
+        .world {
+            width: 1500px;
+            height: 1000px;
+            transform-origin: 0 0;
+            position: absolute
+        }
+
+        .board-label {
+            position: absolute;
+            left: 74px;
+            top: 42px;
+            color: #aab4c1;
+            font-size: 12px;
+            letter-spacing: 1px
+        }
+
+        .group {
+            position: absolute;
+            border: 1px solid #303d4b;
+            border-radius: 14px;
+            background: #131b24b3
+        }
+
+        .group.selected {
+            border-color: #527c8b
+        }
+
+        .group-title {
+            display: flex;
+            justify-content: space-between;
+            padding: 19px 22px;
+            font-size: 13px;
+            color: #b7c3ce;
+            pointer-events: none
+        }
+
+        .draft {
+            font-size: 10px;
+            border: 1px solid #34404e;
+            border-radius: 12px;
+            padding: 2px 8px;
+            color: #8593a1
+        }
+
+        .node {
+            position: absolute;
+            width: 174px;
+            height: 82px;
+            display: flex;
+            align-items: center;
+            gap: 13px;
+            background: #1a222c;
+            border: 1px solid #394552;
+            border-radius: 11px;
+            padding: 14px;
+            box-shadow: 0 8px 18px #0002;
+            text-align: left;
+            user-select: none;
+            touch-action: none;
+            z-index: 2
+        }
+
+        .node:hover,
+        .node.selected {
+            border-color: var(--cyan);
+            background: #1e2b36
+        }
+
+        .node:before,
+        .node:after {
+            content: "";
+            position: absolute;
+            top: 36px;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #516170;
+            border: 2px solid #19222d
+        }
+
+        .node:before {
+            left: -5px
+        }
+
+        .node:after {
+            right: -5px
+        }
+
+        .icon {
+            width: 40px;
+            height: 40px;
+            display: grid;
+            place-items: center;
+            background: #25333f;
+            color: var(--cyan);
+            border-radius: 9px;
+            font-size: 16px;
+            font-weight: 600;
+            flex-shrink: 0
+        }
+
+        .node:first-of-type .icon {
+            color: var(--orange)
+        }
+
+        .node b {
+            font-size: 13px;
+            font-weight: 600;
+            display: block;
+            white-space: nowrap
+        }
+
+        .node small {
+            font-size: 11px;
+            color: #91a0af;
+            display: block;
+            margin-top: 6px
+        }
+
+        .node.running {
+            border-color: var(--orange);
+            box-shadow: 0 0 0 4px #ed957c18
+        }
+
+        .node.done {
+            border-color: #8bc9aa
+        }
+
+        .node.done:after {
+            background: #8bc9aa
+        }
+
+        .note {
+            position: absolute;
+            width: 238px;
+            min-height: 180px;
+            background: #c4b58a;
+            color: #252d32;
+            border-radius: 4px;
+            box-shadow: 5px 6px 0 #0003;
+            padding: 0 16px 14px;
+            z-index: 2;
+            touch-action: none
+        }
+
+        .note.cool {
+            background: #a7bfc0
+        }
+
+        .note-head {
+            padding: 13px 0 11px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid #3333;
+            cursor: grab;
+            font-size: 12px;
+            font-weight: 700
+        }
+
+        .note-head button {
+            background: none;
+            color: #353b3e;
+            padding: 0 4px;
+            border: 0;
+            font-size: 16px
+        }
+
+        .note textarea {
+            width: 100%;
+            border: 0;
+            outline: none;
+            background: none;
+            resize: vertical;
+            color: #252d32;
+            line-height: 1.75;
+            font-size: 13px;
+            margin-top: 11px;
+            min-height: 93px
+        }
+
+        .note small {
+            font-size: 10px;
+            opacity: .65
+        }
+
+        svg.edges {
+            position: absolute;
+            inset: 0;
+            width: 1500px;
+            height: 1000px;
+            pointer-events: none
+        }
+
+        .toolbar {
+            position: absolute;
+            left: 20px;
+            top: 28px;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            background: #171e27;
+            border: 1px solid var(--line);
+            padding: 7px;
+            border-radius: 10px;
+            z-index: 3
+        }
+
+        .toolbar button {
+            border: 0;
+            background: transparent;
+            width: 36px;
+            height: 36px;
+            padding: 0;
+            font-size: 18px
+        }
+
+        .toolbar button.active {
+            background: #263b45;
+            color: var(--cyan)
+        }
+
+        .bottom {
+            position: absolute;
+            bottom: 22px;
+            left: 22px;
+            display: flex;
+            gap: 8px;
+            z-index: 3
+        }
+
+        .bottom button {
+            background: #18212b
+        }
+
+        .hint {
+            position: absolute;
+            bottom: 24px;
+            right: 25px;
+            font-size: 11px;
+            color: #7e8e9e;
+            pointer-events: none
+        }
+
+        .zoom {
+            min-width: 57px
+        }
+
+        .panel {
+            position: absolute;
+            right: 0;
+            top: 72px;
+            bottom: 0;
+            width: 330px;
+            background: #161e27;
+            border-left: 1px solid #3d4b5a;
+            z-index: 6;
+            padding: 25px;
+            box-shadow: -16px 0 45px #0003;
+            overflow-y: auto
+        }
+
+        .panel[hidden] {
+            display: none
+        }
+
+        .panel-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px
+        }
+
+        .panel-top h2 {
+            font-size: 18px;
+            margin: 0
+        }
+
+        .panel p {
+            font-size: 12px;
+            color: var(--muted);
+            line-height: 1.8
+        }
+
+        .panel label {
+            display: block;
+            color: #a6b3c1;
+            font-size: 12px;
+            margin: 26px 0 9px
+        }
+
+        .panel input {
+            width: 100%;
+            border: 1px solid #3a4858;
+            background: #0e151d;
+            padding: 12px;
+            border-radius: 6px;
+            color: var(--text)
+        }
+
+        .panel .primary {
+            width: 100%;
+            margin-top: 28px
+        }
+
+        .panel .example {
+            padding: 16px;
+            background: #101820;
+            border-radius: 8px;
+            margin-top: 28px;
+            font-size: 12px;
+            color: #9fb0bf;
+            line-height: 1.8
+        }
+
+        .log {
+            position: absolute;
+            bottom: 0;
+            left: 222px;
+            right: 0;
+            height: 192px;
+            background: #121b25f5;
+            border-top: 1px solid #3d505f;
+            z-index: 4;
+            padding: 16px 25px;
+            overflow: auto
+        }
+
+        .log[hidden] {
+            display: none
+        }
+
+        .log-head {
+            display: flex;
+            align-items: center;
+            justify-content: space-between
+        }
+
+        .log-head strong {
+            font-size: 13px
+        }
+
+        .log-lines {
+            display: flex;
+            gap: 14px;
+            margin-top: 18px;
+            flex-wrap: wrap
+        }
+
+        .log-item {
+            padding: 12px 17px;
+            background: #202c36;
+            border-radius: 7px;
+            font-size: 12px;
+            color: #a9d8bd
+        }
+
+        .toast {
+            position: fixed;
+            bottom: 28px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 20;
+            background: #dae7ed;
+            color: #1c2c35;
+            padding: 12px 20px;
+            border-radius: 8px;
+            box-shadow: 0 8px 30px #0005;
+            font-size: 13px;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity .2s
+        }
+
+        .toast.show {
+            opacity: 1
+        }
+
+        .tiny-status {
+            font-size: 11px;
+            color: #8fbaa7
+        }
+
+        .canvas.pan {
+            cursor: grab
+        }
+
+        .save {
+            position: absolute;
+            left: 76px;
+            top: 83px;
+            color: #6f8797;
+            font-size: 10px
+        }
+
+        .branch-label {
+            position: absolute;
+            font-size: 10px;
+            color: #86a2b5;
+            left: 718px;
+            top: 239px;
+            pointer-events: none
+        }
+
+        .cursor-demo {
+            position: absolute;
+            left: 628px;
+            top: 347px;
+            color: var(--cyan);
+            font-size: 22px;
+            pointer-events: none
+        }
+
+        .cursor-demo span {
+            display: block;
+            font-size: 10px;
+            background: var(--cyan);
+            color: #17232c;
+            border-radius: 4px;
+            padding: 4px 8px;
+            margin-left: 15px
+        }
+
+        .mobile-banner {
+            display: none
+        }
+
+        @media(max-width:1050px) {
+            .sidebar {
+                width: 180px
+            }
+
+            .canvas,
+            .log {
+                left: 180px
+            }
+
+            .people,
+            .avatars {
+                display: none
+            }
+
+            .title {
+                max-width: 190px
+            }
+
+            .hint {
+                display: none
+            }
+        }
+
+        @media(max-width:720px) {
+            header {
+                padding: 0 14px;
+                gap: 12px;
+                height: 65px
+            }
+
+            .logo {
+                font-size: 18px
+            }
+
+            .divider,
+            .title,
+            .tag {
+                display: none
+            }
+
+            .sidebar {
+                display: none
+            }
+
+            .canvas {
+                left: 0;
+                top: 65px
+            }
+
+            .panel {
+                top: 65px;
+                width: min(330px, 100%)
+            }
+
+            .log {
+                left: 0
+            }
+
+            .bottom {
+                bottom: 20px
+            }
+
+            .sideinfo {
+                display: none
+            }
+
+            .mobile-banner {
+                display: block;
+                position: absolute;
+                top: 12px;
+                right: 12px;
+                font-size: 10px;
+                color: #8091a1
+            }
+
+            .toolbar {
+                top: 16px;
+                left: 12px
+            }
+        }
+
+        @media(prefers-reduced-motion:reduce) {
+            * {
+                transition: none !important
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <header>
+        <div class="logo"><em>F</em>LOW<span
+                style="font-size:11px;letter-spacing:0;margin-left:8px;color:#94a2b2">共作</span></div>
+        <div class="divider"></div>
+        <div class="title"><b>專題自動化白板</b><small>WORKFLOW COLLABORATION</small></div><span class="tag">互動概念 Demo</span>
+        <div class="spacer"></div>
+        <div class="avatars" aria-label="模擬團隊成員"><span>米</span><span>哲</span><span>宇</span></div><span
+            class="people">協作示意</span><button id="run" class="primary">▷ 模擬執行</button>
+    </header>
+    <aside class="sidebar">
+        <div class="eyebrow">WORKSPACE</div><button class="nav active" data-view="all"><span
+                class="dot"></span>白板總覽</button>
+        <div class="eyebrow" style="margin:34px 10px 15px">WORKFLOWS / 02</div><button class="nav"
+            data-view="form"><span class="dot"></span>表單通知流程</button><button class="nav" data-view="digest"><span
+                class="dot"></span>每日資料摘要</button><button class="nav" id="history">↳　執行紀錄</button>
+        <div class="sideinfo"><strong>想法與工作流，在同一處。</strong>
+            <p>拖曳節點安排流程，<br>把團隊筆記留在旁邊。</p><span class="tiny-status" id="save-status">● 本機自動儲存</span>
+            <p style="font-size:10px">此為單機示意，未連線 n8n。<br>成員頭像與游標為模擬。</p>
+        </div>
+    </aside>
+    <main class="canvas" id="canvas" aria-label="可平移縮放的協作白板">
+        <div class="mobile-banner">拖曳空白處移動畫布</div>
+        <div class="world" id="world">
+            <div class="board-label">PROJECT BOARD <span style="color:#526473;margin-left:14px">/ 共作 FLOW</span></div>
+            <div class="save">工作流與筆記，留在同一個空間</div>
+            <div class="group selected" data-flow="form" style="left:76px;top:145px;width:924px;height:247px">
+                <div class="group-title"><span>01　表單通知流程</span><span class="draft">草稿 · 4 個節點</span></div>
+            </div>
+            <div class="group" data-flow="digest" style="left:288px;top:460px;width:922px;height:232px">
+                <div class="group-title"><span>02　每日資料摘要</span><span class="draft">草稿 · 4 個節點</span></div>
+            </div><svg class="edges" id="edges" aria-hidden="true"></svg>
+            <div id="nodes"></div>
+            <div id="notes"></div>
+            <div class="cursor-demo">➤<span>阿哲 · 模擬游標</span></div>
+        </div>
+        <div class="toolbar" aria-label="白板工具"><button id="select" class="active" title="選取與移動"
+                aria-label="選取與移動">↖</button><button id="add-note" title="新增便條紙" aria-label="新增便條紙">＋</button><button
+                id="pan" title="平移模式" aria-label="平移模式">✥</button><button id="reset" title="還原示範"
+                aria-label="還原示範">↺</button></div>
+        <div class="bottom"><button id="zoom-out" aria-label="縮小">−</button><button id="fit" class="zoom"
+                title="顯示全部">100%</button><button id="zoom-in" aria-label="放大">＋</button></div>
+        <div class="hint">拖曳空白處平移 · 滾輪縮放 · 點選節點設定 · ＋ 新增筆記</div>
+    </main>
+    <aside class="panel" id="panel" hidden aria-label="節點設定">
+        <div class="panel-top">
+            <h2 id="panel-title">節點設定</h2><button id="close-panel" aria-label="關閉設定">×</button>
+        </div>
+        <p>節點設定示意，修改只保存在這個瀏覽器。</p><label for="node-name">節點名稱</label><input id="node-name"><label for="node-param"
+            id="param-label">參數</label><input id="node-param"><button id="save-node" class="primary">儲存設定</button>
+        <div class="example"><strong>示意輸入</strong><br>email: student@example.com<br>project:
+            校園活動<br><br>這個版本不會寄信或存取外部資料。</div>
+    </aside>
+    <section class="log" id="log" hidden aria-label="模擬執行紀錄">
+        <div class="log-head"><strong id="log-title">執行紀錄</strong><button id="close-log" aria-label="關閉紀錄">×</button>
+        </div>
+        <div class="log-lines" id="log-lines">尚未執行工作流。</div>
+    </section>
+    <div class="toast" role="status" id="toast"></div>
+    <script>
+        'use strict';
+        const $ = s => document.querySelector(s), $$ = s => [...document.querySelectorAll(s)], key = 'flow-demo-v1';
+        const defaults = { nodes: [{ id: 1, flow: 'form', x: 103, y: 245, name: 'Webhook', desc: '接收表單', icon: 'W', label: '事件名稱', param: '校園活動報名' }, { id: 2, flow: 'form', x: 328, y: 245, name: 'Edit Fields', desc: '整理欄位', icon: '{ }', label: '對應欄位', param: 'name, email, department' }, { id: 3, flow: 'form', x: 553, y: 245, name: 'If', desc: '檢查資料', icon: 'IF', label: '判斷條件', param: 'email 不為空值' }, { id: 4, flow: 'form', x: 778, y: 245, name: 'Email', desc: '寄送確認信', icon: '@', label: '信件主旨', param: '校園活動報名確認' }, { id: 5, flow: 'digest', x: 315, y: 548, name: 'Schedule', desc: '每天 18:00', icon: 'T', label: '排程時間', param: '每天 18:00' }, { id: 6, flow: 'digest', x: 540, y: 548, name: 'HTTP Request', desc: '取得專題資料', icon: '↗', label: '資料來源', param: '專題測試資料' }, { id: 7, flow: 'digest', x: 765, y: 548, name: 'AI Summary', desc: '整理今日摘要', icon: 'AI', label: '摘要指令', param: '整理成三個重點' }, { id: 8, flow: 'digest', x: 990, y: 548, name: 'Email', desc: '寄送團隊摘要', icon: '@', label: '信件主旨', param: '今日專題摘要' }], notes: [{ id: 1, x: 1042, y: 145, title: '討論紀錄', text: '先確認信箱欄位，再測試通知。\n今天先使用測試資料。', author: 'Mina', cool: false }, { id: 2, x: 76, y: 462, title: '待確認', text: '摘要格式與收件人\n\n一個重點一段，方便大家閱讀。', author: '小宇', cool: true }] };
+        let data = structuredClone(defaults); try { const saved = JSON.parse(localStorage.getItem(key)); if (saved && Array.isArray(saved.nodes) && saved.nodes.length === 8 && Array.isArray(saved.notes)) data = saved } catch { }
+        let scale = 1, tx = 0, ty = 0, selected = null, flow = 'form', panning = false, drag = null, running = false, timer;
+        function toast(s) { $('#toast').textContent = s; $('#toast').classList.add('show'); clearTimeout(timer); timer = setTimeout(() => $('#toast').classList.remove('show'), 2300) }
+        function persist() { try { localStorage.setItem(key, JSON.stringify(data)); $('#save-status').textContent = '● 變更已儲存在本機' } catch { $('#save-status').textContent = '● 本次變更僅暫存' } }
+        function edges() { const svg = $('#edges'); svg.replaceChildren(); for (const ids of [[1, 2, 3, 4], [5, 6, 7, 8]]) for (let i = 0; i < 3; i++) { const a = data.nodes.find(n => n.id === ids[i]), b = data.nodes.find(n => n.id === ids[i + 1]), path = document.createElementNS('http://www.w3.org/2000/svg', 'path'); path.setAttribute('d', `M ${a.x + 174} ${a.y + 41} C ${a.x + 205} ${a.y + 41},${b.x - 31} ${b.y + 41},${b.x} ${b.y + 41}`); path.setAttribute('fill', 'none'); path.setAttribute('stroke', '#85c4d4'); path.setAttribute('stroke-width', '2'); svg.append(path) } }
+        function render() {
+            $('#nodes').replaceChildren(); data.nodes.forEach(n => { const el = document.createElement('button'); el.className = 'node'; el.dataset.id = n.id; el.style.left = n.x + 'px'; el.style.top = n.y + 'px'; el.setAttribute('aria-label', n.name + '，' + n.desc + '，點選設定'); const icon = document.createElement('span'); icon.className = 'icon'; icon.textContent = n.icon; const copy = document.createElement('span'), b = document.createElement('b'), s = document.createElement('small'); b.textContent = n.name; s.textContent = n.desc; copy.append(b, s); el.append(icon, copy); el.onclick = () => { if (!el.dataset.dragged) openNode(n.id); delete el.dataset.dragged }; $('#nodes').append(el) });
+            $('#notes').replaceChildren(); data.notes.forEach(n => { const el = document.createElement('article'); el.className = 'note' + (n.cool ? ' cool' : ''); el.dataset.id = n.id; el.style.left = n.x + 'px'; el.style.top = n.y + 'px'; const head = document.createElement('div'); head.className = 'note-head'; const title = document.createElement('span'); title.textContent = n.title; const del = document.createElement('button'); del.textContent = '×'; del.setAttribute('aria-label', '刪除' + n.title); del.onclick = () => { if (running) return; data.notes = data.notes.filter(x => x.id !== n.id); persist(); render() }; head.append(title, del); const input = document.createElement('textarea'); input.value = n.text; input.setAttribute('aria-label', n.title + '內容'); input.oninput = () => { n.text = input.value; persist() }; const small = document.createElement('small'); small.textContent = n.author + ' · 團隊筆記'; el.append(head, input, small); $('#notes').append(el) }); edges(); markFlow()
+        }
+        function markFlow() { $$('.group').forEach(el => el.classList.toggle('selected', el.dataset.flow === flow)) }
+        function openNode(id) { if (running) return; selected = id; const n = data.nodes.find(n => n.id === id); flow = n.flow; markFlow(); $$('.node').forEach(el => el.classList.toggle('selected', +el.dataset.id === id)); $('#panel-title').textContent = n.name; $('#node-name').value = n.name; $('#node-param').value = n.param; $('#param-label').textContent = n.label; $('#panel').hidden = false }
+        $('#close-panel').onclick = () => $('#panel').hidden = true;
+        $('#save-node').onclick = () => { const n = data.nodes.find(n => n.id === selected); n.name = $('#node-name').value.trim().slice(0, 22) || n.name; n.param = $('#node-param').value.slice(0, 200); persist(); render(); $('#panel').hidden = true; toast('節點設定已儲存') };
+        function transform() { $('#world').style.transform = `translate(${tx}px,${ty}px) scale(${scale})`; $('#fit').textContent = Math.round(scale * 100) + '%' }
+        function fit() { const r = $('#canvas').getBoundingClientRect(); scale = Math.min(1, (r.width - 80) / 1320, (r.height - 90) / 740); scale = Math.max(.6, scale); tx = Math.max(8, (r.width - 1320 * scale) / 2); ty = 15; transform() }
+        function zoom(delta, cx, cy) { const old = scale; scale = Math.max(.3, Math.min(1.8, scale + delta)); tx = cx - (cx - tx) * scale / old; ty = cy - (cy - ty) * scale / old; transform() }
+        $('#zoom-in').onclick = () => zoom(.1, $('#canvas').clientWidth / 2, $('#canvas').clientHeight / 2); $('#zoom-out').onclick = () => zoom(-.1, $('#canvas').clientWidth / 2, $('#canvas').clientHeight / 2); $('#fit').onclick = fit;
+        $('#canvas').addEventListener('wheel', e => { if (e.target.closest('textarea')) return; e.preventDefault(); const r = $('#canvas').getBoundingClientRect(); zoom(e.deltaY < 0 ? .07 : -.07, e.clientX - r.left, e.clientY - r.top) }, { passive: false });
+        $('#canvas').addEventListener('pointerdown', e => { if (e.button !== 0 || e.target.closest('.toolbar,.bottom,textarea,.note-head button')) return; const item = e.target.closest('.node,.note-head'); if (item?.classList.contains('node') && running) return; const el = item?.closest('.node,.note'); const n = el ? (el.classList.contains('node') ? data.nodes : data.notes).find(n => n.id === +el.dataset.id) : null; if (el?.classList.contains('node')) delete el.dataset.dragged; drag = { el, n, x: e.clientX, y: e.clientY, ox: (!el || panning) ? tx : n.x, oy: (!el || panning) ? ty : n.y, pan: !el || panning, moved: false }; if (!el) e.preventDefault() });
+        window.addEventListener('pointermove', e => { if (!drag) return; const dx = e.clientX - drag.x, dy = e.clientY - drag.y; if (Math.abs(dx) + Math.abs(dy) > 4) drag.moved = true; if (!drag.moved) return; if (drag.pan) { tx = drag.ox + dx; ty = drag.oy + dy; transform() } else { drag.n.x = Math.max(0, Math.min(1300, drag.ox + dx / scale)); drag.n.y = Math.max(100, Math.min(850, drag.oy + dy / scale)); drag.el.style.left = drag.n.x + 'px'; drag.el.style.top = drag.n.y + 'px'; edges(); drag.el.dataset.dragged = 'yes' } });
+        window.addEventListener('pointerup', () => { if (drag?.moved && !drag.pan) persist(); drag = null }); window.addEventListener('pointercancel', () => drag = null);
+        $('#pan').onclick = () => { panning = true; $('#canvas').classList.add('pan'); $('#pan').classList.add('active'); $('#select').classList.remove('active') }; $('#select').onclick = () => { panning = false; $('#canvas').classList.remove('pan'); $('#pan').classList.remove('active'); $('#select').classList.add('active') };
+        $('#add-note').onclick = () => { if (running) return; const r = $('#canvas').getBoundingClientRect(); const n = { id: Date.now(), x: Math.max(0, Math.min(1250, (r.width / 2 - tx) / scale)), y: Math.max(110, Math.min(800, (r.height / 2 - ty) / scale)), title: '團隊筆記', text: '', author: '我', cool: false }; data.notes.push(n); persist(); render(); $('#notes').lastElementChild.querySelector('textarea').focus(); toast('已新增便條紙，拖曳標題可移動') };
+        $('#reset').onclick = () => { if (running) return; if (confirm('還原示範畫面？這會清除本機的筆記與設定修改。')) { data = structuredClone(defaults); persist(); render(); fit(); $('#panel').hidden = true; $('#log').hidden = true; toast('已還原示範') } };
+        $$('[data-view]').forEach(btn => btn.onclick = () => { if (running) return; $$('[data-view]').forEach(b => b.classList.toggle('active', b === btn)); if (btn.dataset.view === 'all') { fit(); return } flow = btn.dataset.view; markFlow(); const g = $(`.group[data-flow="${flow}"]`); scale = Math.min(1, ($('#canvas').clientWidth - 90) / 960); tx = 70 - parseFloat(g.style.left) * scale; ty = 100 - parseFloat(g.style.top) * scale; transform(); toast('目前工作流：' + (flow === 'form' ? '表單通知流程' : '每日資料摘要')) });
+        $('#history').onclick = () => $('#log').hidden = !$('#log').hidden; $('#close-log').onclick = () => $('#log').hidden = true;
+        $('#run').onclick = async () => { if (running) return; running = true; $('#run').disabled = true; $('#run').textContent = '執行中…'; $('#panel').hidden = true; $('#log').hidden = false; $('#log-lines').replaceChildren(); $$('.node').forEach(el => el.classList.remove('done', 'running')); const ns = data.nodes.filter(n => n.flow === flow); $('#log-title').textContent = (flow === 'form' ? '表單通知流程' : '每日資料摘要') + ' · 模擬執行'; for (const n of ns) { const el = $(`.node[data-id="${n.id}"]`); el.classList.add('running'); await new Promise(r => setTimeout(r, 600)); el.classList.remove('running'); el.classList.add('done'); const entry = document.createElement('div'); entry.className = 'log-item'; entry.textContent = '✓ ' + n.name + ' · 模擬成功'; $('#log-lines').append(entry) } running = false; $('#run').disabled = false; $('#run').textContent = '▷ 模擬執行'; toast('模擬完成，未發送任何真實資料') };
+        window.addEventListener('resize', fit); window.addEventListener('keydown', e => { if (e.key === 'Escape') { $('#panel').hidden = true; $('#log').hidden = true } }); render(); fit();
+    </script>
+</body>
+
+</html>
